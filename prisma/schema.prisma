@@ -1,0 +1,191 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  USER
+  ADMIN
+}
+
+enum UserStatus {
+  ACTIVE
+  INACTIVE
+  SUSPENDED
+  DELETED
+}
+
+enum Gender {
+  MALE
+  FEMALE
+  OTHER
+  PREFER_NOT_TO_SAY
+}
+
+enum AuthProvider {
+  EMAIL
+  GOOGLE
+  APPLE
+}
+
+enum FollowStatus {
+  PENDING
+  ACCEPTED
+}
+
+model User {
+  id                    Int                @id @default(autoincrement())
+  email                 String             @unique
+  username              String             @unique
+  passwordHash          String?            @map("password_hash")
+  displayName           String?            @map("display_name")
+  firstName             String?            @map("first_name")
+  lastName              String?            @map("last_name")
+  bio                   String?            @db.Text
+  website               String?
+  avatarUrl             String?            @map("avatar_url")
+  coverUrl              String?            @map("cover_url")
+  phoneNumber           String?            @unique @map("phone_number")
+  countryCode           String?            @map("country_code")
+  birthDate             DateTime?          @map("birth_date")
+  gender                Gender?
+  role                  UserRole           @default(USER)
+  status                UserStatus         @default(ACTIVE)
+  authProvider          AuthProvider       @default(EMAIL) @map("auth_provider")
+  isEmailVerified       Boolean            @default(false) @map("is_email_verified")
+  isPhoneVerified       Boolean            @default(false) @map("is_phone_verified")
+  isPrivate             Boolean            @default(false) @map("is_private")
+  isActive              Boolean            @default(true) @map("is_active")
+  isDeleted             Boolean            @default(false) @map("is_deleted")
+  followersCount        Int                @default(0) @map("followers_count")
+  followingCount        Int                @default(0) @map("following_count")
+  postsCount            Int                @default(0) @map("posts_count")
+  lastLoginAt           DateTime?          @map("last_login_at")
+  lastSeenAt            DateTime?          @map("last_seen_at")
+  emailVerifiedAt       DateTime?          @map("email_verified_at")
+  phoneVerifiedAt       DateTime?          @map("phone_verified_at")
+  deletedAt             DateTime?          @map("deleted_at")
+  createdAt             DateTime           @default(now()) @map("created_at")
+  updatedAt             DateTime           @updatedAt @map("updated_at")
+
+  posts                 Post[]
+  sessions              Session[]
+  refreshTokens         RefreshToken[]
+  verificationTokens    VerificationToken[]
+  following             Follow[]           @relation("follower_rel")
+  followers             Follow[]           @relation("following_rel")
+  blockedUsers          UserBlock[]        @relation("blocker_rel")
+  blockedByUsers        UserBlock[]        @relation("blocked_rel")
+
+  @@index([email], map: "users_email_idx")
+  @@index([username], map: "users_username_idx")
+  @@index([phoneNumber], map: "users_phone_number_idx")
+  @@index([status], map: "users_status_idx")
+  @@index([createdAt], map: "users_created_at_idx")
+  @@map("users")
+}
+
+model Post {
+  id                    Int        @id @default(autoincrement())
+  caption               String?    @db.Text
+  imageUrl              String     @map("image_url")
+  createdAt             DateTime   @default(now()) @map("created_at")
+  updatedAt             DateTime   @updatedAt @map("updated_at")
+
+  userId                Int        @map("user_id")
+  user                  User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId], map: "posts_user_id_idx")
+  @@index([createdAt], map: "posts_created_at_idx")
+  @@map("posts")
+}
+
+model Session {
+  id                    Int        @id @default(autoincrement())
+  userId                Int        @map("user_id")
+  deviceId              String?    @map("device_id")
+  deviceName            String?    @map("device_name")
+  ipAddress             String?    @map("ip_address")
+  userAgent             String?    @map("user_agent")
+  lastUsedAt            DateTime?  @map("last_used_at")
+  expiresAt             DateTime   @map("expires_at")
+  createdAt             DateTime   @default(now()) @map("created_at")
+  updatedAt             DateTime   @updatedAt @map("updated_at")
+
+  user                  User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId], map: "sessions_user_id_idx")
+  @@index([expiresAt], map: "sessions_expires_at_idx")
+  @@map("sessions")
+}
+
+model RefreshToken {
+  id                    Int        @id @default(autoincrement())
+  userId                Int        @map("user_id")
+  token                 String     @unique
+  revokedAt             DateTime?  @map("revoked_at")
+  expiresAt             DateTime   @map("expires_at")
+  createdAt             DateTime   @default(now()) @map("created_at")
+  updatedAt             DateTime   @updatedAt @map("updated_at")
+
+  user                  User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId], map: "refresh_tokens_user_id_idx")
+  @@index([expiresAt], map: "refresh_tokens_expires_at_idx")
+  @@map("refresh_tokens")
+}
+
+model VerificationToken {
+  id                    Int        @id @default(autoincrement())
+  userId                Int        @map("user_id")
+  token                 String     @unique
+  type                  String
+  expiresAt             DateTime   @map("expires_at")
+  usedAt                DateTime?  @map("used_at")
+  createdAt             DateTime   @default(now()) @map("created_at")
+  updatedAt             DateTime   @updatedAt @map("updated_at")
+
+  user                  User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId], map: "verification_tokens_user_id_idx")
+  @@index([type], map: "verification_tokens_type_idx")
+  @@index([expiresAt], map: "verification_tokens_expires_at_idx")
+  @@map("verification_tokens")
+}
+
+model Follow {
+  id                    Int          @id @default(autoincrement())
+  followerId            Int          @map("follower_id")
+  followingId           Int          @map("following_id")
+  status                FollowStatus @default(ACCEPTED)
+  createdAt             DateTime     @default(now()) @map("created_at")
+  updatedAt             DateTime     @updatedAt @map("updated_at")
+
+  follower              User         @relation("follower_rel", fields: [followerId], references: [id], onDelete: Cascade)
+  following             User         @relation("following_rel", fields: [followingId], references: [id], onDelete: Cascade)
+
+  @@unique([followerId, followingId], map: "follows_follower_id_following_id_key")
+  @@index([followerId], map: "follows_follower_id_idx")
+  @@index([followingId], map: "follows_following_id_idx")
+  @@index([status], map: "follows_status_idx")
+  @@map("follows")
+}
+
+model UserBlock {
+  id                    Int        @id @default(autoincrement())
+  blockerId             Int        @map("blocker_id")
+  blockedId             Int        @map("blocked_id")
+  createdAt             DateTime   @default(now()) @map("created_at")
+
+  blocker               User       @relation("blocker_rel", fields: [blockerId], references: [id], onDelete: Cascade)
+  blocked               User       @relation("blocked_rel", fields: [blockedId], references: [id], onDelete: Cascade)
+
+  @@unique([blockerId, blockedId], map: "user_blocks_blocker_id_blocked_id_key")
+  @@index([blockerId], map: "user_blocks_blocker_id_idx")
+  @@index([blockedId], map: "user_blocks_blocked_id_idx")
+  @@map("user_blocks")
+}
