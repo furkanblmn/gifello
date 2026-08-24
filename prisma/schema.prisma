@@ -27,165 +27,743 @@ enum Gender {
 }
 
 enum AuthProvider {
-  EMAIL
   GOOGLE
   APPLE
 }
 
-enum FollowStatus {
+enum VerificationTokenType {
+  EMAIL_VERIFICATION
+  PASSWORD_RESET
+  PHONE_VERIFICATION
+  CHANGE_EMAIL
+  CHANGE_PHONE
+}
+
+enum FollowRequestStatus {
   PENDING
   ACCEPTED
+  REJECTED
+  CANCELLED
+}
+
+enum PostVisibility {
+  PUBLIC
+  FOLLOWERS_ONLY
+  PRIVATE
+}
+
+enum PostType {
+  STANDARD
+  GOSSIP_CAULDRON
+}
+
+enum PostMediaType {
+  IMAGE
+  VIDEO
+  CAROUSEL_ITEM
+}
+
+enum MentionTargetType {
+  POST
+  COMMENT
+}
+
+enum ConversationType {
+  DIRECT
+  GROUP
+}
+
+enum MessageType {
+  TEXT
+  IMAGE
+  VIDEO
+  AUDIO
+  SYSTEM
+}
+
+enum NotificationType {
+  FOLLOW_REQUEST
+  FOLLOW_ACCEPTED
+  NEW_FOLLOWER
+  SCENT_POST_NEARBY
+  POST_LIKE
+  COMMENT_LIKE
+  COMMENT_REPLY
+  POST_COMMENT
+  MENTION_IN_POST
+  MENTION_IN_COMMENT
+  MESSAGE_RECEIVED
+  REPORT_STATUS_UPDATED
+}
+
+enum ReportTargetType {
+  USER
+  POST
+  COMMENT
+  MESSAGE
+}
+
+enum ReportStatus {
+  OPEN
+  IN_REVIEW
+  RESOLVED
+  REJECTED
+}
+
+enum ModerationActionType {
+  WARN
+  REMOVE_CONTENT
+  SUSPEND_USER
+  BAN_USER
+  RESTORE_CONTENT
+  CLOSE_REPORT
 }
 
 model User {
-  id                    Int                @id @default(autoincrement())
-  email                 String             @unique
-  username              String             @unique
-  passwordHash          String?            @map("password_hash")
-  displayName           String?            @map("display_name")
-  firstName             String?            @map("first_name")
-  lastName              String?            @map("last_name")
-  bio                   String?            @db.Text
-  website               String?
-  avatarUrl             String?            @map("avatar_url")
-  coverUrl              String?            @map("cover_url")
-  phoneNumber           String?            @unique @map("phone_number")
-  countryCode           String?            @map("country_code")
-  birthDate             DateTime?          @map("birth_date")
-  gender                Gender?
-  role                  UserRole           @default(USER)
-  status                UserStatus         @default(ACTIVE)
-  authProvider          AuthProvider       @default(EMAIL) @map("auth_provider")
-  isEmailVerified       Boolean            @default(false) @map("is_email_verified")
-  isPhoneVerified       Boolean            @default(false) @map("is_phone_verified")
-  isPrivate             Boolean            @default(false) @map("is_private")
-  isActive              Boolean            @default(true) @map("is_active")
-  isDeleted             Boolean            @default(false) @map("is_deleted")
-  followersCount        Int                @default(0) @map("followers_count")
-  followingCount        Int                @default(0) @map("following_count")
-  postsCount            Int                @default(0) @map("posts_count")
-  lastLoginAt           DateTime?          @map("last_login_at")
-  lastSeenAt            DateTime?          @map("last_seen_at")
-  emailVerifiedAt       DateTime?          @map("email_verified_at")
-  phoneVerifiedAt       DateTime?          @map("phone_verified_at")
-  deletedAt             DateTime?          @map("deleted_at")
-  createdAt             DateTime           @default(now()) @map("created_at")
-  updatedAt             DateTime           @updatedAt @map("updated_at")
+  id                 Int                 @id @default(autoincrement())
+  email              String              @unique
+  username           String              @unique
+  phoneNumber        String?             @unique @map("phone_number")
+  passwordHash       String?             @map("password_hash")
+  displayName        String?             @map("display_name")
+  firstName          String?             @map("first_name")
+  lastName           String?             @map("last_name")
+  bio                String?             @db.Text
+  website            String?
+  avatarUrl          String?             @map("avatar_url")
+  coverUrl           String?             @map("cover_url")
+  birthDate          DateTime?           @map("birth_date")
+  gender             Gender?
+  countryCode        String?             @map("country_code")
+  latitude           Decimal?            @db.Decimal(10, 7)
+  longitude          Decimal?            @db.Decimal(10, 7)
+  locationUpdatedAt  DateTime?           @map("location_updated_at")
+  role               UserRole            @default(USER)
+  status             UserStatus          @default(ACTIVE)
+  isPrivate          Boolean             @default(false) @map("is_private")
+  emailVerifiedAt    DateTime?           @map("email_verified_at")
+  phoneVerifiedAt    DateTime?           @map("phone_verified_at")
+  lastLoginAt        DateTime?           @map("last_login_at")
+  lastSeenAt         DateTime?           @map("last_seen_at")
+  deletedAt          DateTime?           @map("deleted_at")
+  followersCount     Int                 @default(0) @map("followers_count")
+  followingCount     Int                 @default(0) @map("following_count")
+  postsCount         Int                 @default(0) @map("posts_count")
+  createdAt          DateTime            @default(now()) @map("created_at")
+  updatedAt          DateTime            @updatedAt @map("updated_at")
 
-  posts                 Post[]
-  sessions              Session[]
-  refreshTokens         RefreshToken[]
-  verificationTokens    VerificationToken[]
-  following             Follow[]           @relation("follower_rel")
-  followers             Follow[]           @relation("following_rel")
-  blockedUsers          UserBlock[]        @relation("blocker_rel")
-  blockedByUsers        UserBlock[]        @relation("blocked_rel")
+  posts              Post[]
+  sessions           Session[]
+  verificationTokens VerificationToken[]
+  authAccounts       UserAuthAccount[]
+  following          Follow[]            @relation("follower_rel")
+  followers          Follow[]            @relation("following_rel")
+  sentFollowRequests FollowRequest[]     @relation("follow_requester_rel")
+  receivedFollowRequests FollowRequest[] @relation("follow_target_rel")
+  postLikes          PostLike[]
+  savedPosts         SavedPost[]
+  comments           Comment[]
+  commentLikes       CommentLike[]
+  createdMentions    Mention[]           @relation("mention_actor_rel")
+  receivedMentions   Mention[]           @relation("mention_target_user_rel")
+  notificationPreference NotificationPreference?
+  receivedNotifications Notification[]   @relation("notification_recipient_rel")
+  actorNotifications Notification[]      @relation("notification_actor_rel")
+  createdConversations Conversation[]    @relation("conversation_creator_rel")
+  conversationParticipants ConversationParticipant[]
+  sentMessages       Message[]           @relation("message_sender_rel")
+  messageReads       MessageRead[]
+  submittedReports   Report[]            @relation("reporter_rel")
+  reportTargets      ReportTarget[]      @relation("report_target_user_rel")
+  moderationTargets  ModerationAction[]  @relation("moderation_target_user_rel")
+  moderationActions  ModerationAction[]  @relation("moderator_user_rel")
+  blockedUsers       UserBlock[]         @relation("blocker_rel")
+  blockedByUsers     UserBlock[]         @relation("blocked_rel")
 
-  @@index([email], map: "users_email_idx")
-  @@index([username], map: "users_username_idx")
-  @@index([phoneNumber], map: "users_phone_number_idx")
   @@index([status], map: "users_status_idx")
   @@index([createdAt], map: "users_created_at_idx")
   @@map("users")
 }
 
 model Post {
-  id                    Int        @id @default(autoincrement())
-  caption               String?    @db.Text
-  imageUrl              String     @map("image_url")
-  createdAt             DateTime   @default(now()) @map("created_at")
-  updatedAt             DateTime   @updatedAt @map("updated_at")
+  id               Int            @id @default(autoincrement())
+  userId           Int            @map("user_id")
+  type             PostType       @default(STANDARD)
+  hasScent         Boolean        @default(false) @map("has_scent")
+  caption          String?        @db.Text
+  visibility       PostVisibility @default(PUBLIC)
+  commentsDisabled Boolean        @default(false) @map("comments_disabled")
+  likesCount       Int            @default(0) @map("likes_count")
+  commentsCount    Int            @default(0) @map("comments_count")
+  savesCount       Int            @default(0) @map("saves_count")
+  mediaCount       Int            @default(0) @map("media_count")
+  publishedAt      DateTime?      @map("published_at")
+  archivedAt       DateTime?      @map("archived_at")
+  deletedAt        DateTime?      @map("deleted_at")
+  createdAt        DateTime       @default(now()) @map("created_at")
+  updatedAt        DateTime       @updatedAt @map("updated_at")
 
-  userId                Int        @map("user_id")
-  user                  User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user             User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  mediaItems       PostMedia[]
+  likes            PostLike[]
+  saves            SavedPost[]
+  comments         Comment[]
+  hashtags         PostHashtag[]
+  mentions         Mention[]      @relation("mention_post_rel")
+  notifications    Notification[] @relation("notification_post_rel")
+  reportTargets    ReportTarget[] @relation("report_target_post_rel")
+  moderationActions ModerationAction[] @relation("moderation_target_post_rel")
 
   @@index([userId], map: "posts_user_id_idx")
+  @@index([type], map: "posts_type_idx")
   @@index([createdAt], map: "posts_created_at_idx")
+  @@index([publishedAt], map: "posts_published_at_idx")
+  @@index([deletedAt], map: "posts_deleted_at_idx")
+  @@index([userId, createdAt], map: "posts_user_id_created_at_idx")
+  @@index([userId, publishedAt], map: "posts_user_id_published_at_idx")
+  @@index([type, publishedAt], map: "posts_type_published_at_idx")
+  @@index([visibility, publishedAt], map: "posts_visibility_published_at_idx")
   @@map("posts")
 }
 
-model Session {
-  id                    Int        @id @default(autoincrement())
-  userId                Int        @map("user_id")
-  deviceId              String?    @map("device_id")
-  deviceName            String?    @map("device_name")
-  ipAddress             String?    @map("ip_address")
-  userAgent             String?    @map("user_agent")
-  lastUsedAt            DateTime?  @map("last_used_at")
-  expiresAt             DateTime   @map("expires_at")
-  createdAt             DateTime   @default(now()) @map("created_at")
-  updatedAt             DateTime   @updatedAt @map("updated_at")
+model AppSetting {
+  id        Int      @id @default(autoincrement())
+  key       String   @unique
+  value     String   @db.Text
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
 
-  user                  User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  @@map("app_settings")
+}
+
+model Session {
+  id            Int            @id @default(autoincrement())
+  userId        Int            @map("user_id")
+  deviceId      String?        @map("device_id")
+  deviceName    String?        @map("device_name")
+  platform      String?        @map("platform")
+  ipAddress     String?        @map("ip_address")
+  userAgent     String?        @map("user_agent")
+  lastUsedAt    DateTime?      @map("last_used_at")
+  expiresAt     DateTime       @map("expires_at")
+  revokedAt     DateTime?      @map("revoked_at")
+  createdAt     DateTime       @default(now()) @map("created_at")
+  updatedAt     DateTime       @updatedAt @map("updated_at")
+
+  user          User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  refreshTokens RefreshToken[]
 
   @@index([userId], map: "sessions_user_id_idx")
   @@index([expiresAt], map: "sessions_expires_at_idx")
+  @@index([revokedAt], map: "sessions_revoked_at_idx")
   @@map("sessions")
 }
 
 model RefreshToken {
-  id                    Int        @id @default(autoincrement())
-  userId                Int        @map("user_id")
-  token                 String     @unique
-  revokedAt             DateTime?  @map("revoked_at")
-  expiresAt             DateTime   @map("expires_at")
-  createdAt             DateTime   @default(now()) @map("created_at")
-  updatedAt             DateTime   @updatedAt @map("updated_at")
+  id                Int            @id @default(autoincrement())
+  sessionId         Int            @map("session_id")
+  tokenHash         String         @unique @map("token_hash")
+  expiresAt         DateTime       @map("expires_at")
+  revokedAt         DateTime?      @map("revoked_at")
+  replacedByTokenId Int?           @map("replaced_by_token_id")
+  createdAt         DateTime       @default(now()) @map("created_at")
+  updatedAt         DateTime       @updatedAt @map("updated_at")
 
-  user                  User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  session           Session        @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  replacedByToken   RefreshToken?  @relation("refresh_token_replacements", fields: [replacedByTokenId], references: [id], onDelete: SetNull)
+  replacedTokens    RefreshToken[] @relation("refresh_token_replacements")
 
-  @@index([userId], map: "refresh_tokens_user_id_idx")
+  @@index([sessionId], map: "refresh_tokens_session_id_idx")
   @@index([expiresAt], map: "refresh_tokens_expires_at_idx")
+  @@index([revokedAt], map: "refresh_tokens_revoked_at_idx")
+  @@index([replacedByTokenId], map: "refresh_tokens_replaced_by_token_id_idx")
   @@map("refresh_tokens")
 }
 
 model VerificationToken {
-  id                    Int        @id @default(autoincrement())
-  userId                Int        @map("user_id")
-  token                 String     @unique
-  type                  String
-  expiresAt             DateTime   @map("expires_at")
-  usedAt                DateTime?  @map("used_at")
-  createdAt             DateTime   @default(now()) @map("created_at")
-  updatedAt             DateTime   @updatedAt @map("updated_at")
+  id          Int                   @id @default(autoincrement())
+  userId      Int                   @map("user_id")
+  type        VerificationTokenType
+  tokenHash   String                @unique @map("token_hash")
+  targetValue String?               @map("target_value")
+  expiresAt   DateTime              @map("expires_at")
+  usedAt      DateTime?             @map("used_at")
+  createdAt   DateTime              @default(now()) @map("created_at")
+  updatedAt   DateTime              @updatedAt @map("updated_at")
 
-  user                  User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user        User                  @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  @@index([userId], map: "verification_tokens_user_id_idx")
-  @@index([type], map: "verification_tokens_type_idx")
+  @@index([userId, type], map: "verification_tokens_user_id_type_idx")
   @@index([expiresAt], map: "verification_tokens_expires_at_idx")
   @@map("verification_tokens")
 }
 
+model UserAuthAccount {
+  id             Int          @id @default(autoincrement())
+  userId         Int          @map("user_id")
+  provider       AuthProvider
+  providerUserId String       @map("provider_user_id")
+  providerEmail  String?      @map("provider_email")
+  createdAt      DateTime     @default(now()) @map("created_at")
+  updatedAt      DateTime     @updatedAt @map("updated_at")
+
+  user           User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerUserId], map: "user_auth_accounts_provider_provider_user_id_key")
+  @@index([userId], map: "user_auth_accounts_user_id_idx")
+  @@map("user_auth_accounts")
+}
+
 model Follow {
-  id                    Int          @id @default(autoincrement())
-  followerId            Int          @map("follower_id")
-  followingId           Int          @map("following_id")
-  status                FollowStatus @default(ACCEPTED)
-  createdAt             DateTime     @default(now()) @map("created_at")
-  updatedAt             DateTime     @updatedAt @map("updated_at")
+  id              Int      @id @default(autoincrement())
+  followerUserId  Int      @map("follower_user_id")
+  followingUserId Int      @map("following_user_id")
+  createdAt       DateTime @default(now()) @map("created_at")
 
-  follower              User         @relation("follower_rel", fields: [followerId], references: [id], onDelete: Cascade)
-  following             User         @relation("following_rel", fields: [followingId], references: [id], onDelete: Cascade)
+  follower        User     @relation("follower_rel", fields: [followerUserId], references: [id], onDelete: Cascade)
+  following       User     @relation("following_rel", fields: [followingUserId], references: [id], onDelete: Cascade)
 
-  @@unique([followerId, followingId], map: "follows_follower_id_following_id_key")
-  @@index([followerId], map: "follows_follower_id_idx")
-  @@index([followingId], map: "follows_following_id_idx")
-  @@index([status], map: "follows_status_idx")
+  @@unique([followerUserId, followingUserId], map: "follows_follower_user_id_following_user_id_key")
+  @@index([followerUserId], map: "follows_follower_user_id_idx")
+  @@index([followingUserId], map: "follows_following_user_id_idx")
+  @@index([createdAt], map: "follows_created_at_idx")
   @@map("follows")
 }
 
+model FollowRequest {
+  id              Int                 @id @default(autoincrement())
+  requesterUserId Int                 @map("requester_user_id")
+  targetUserId    Int                 @map("target_user_id")
+  status          FollowRequestStatus @default(PENDING)
+  respondedAt     DateTime?           @map("responded_at")
+  createdAt       DateTime            @default(now()) @map("created_at")
+  updatedAt       DateTime            @updatedAt @map("updated_at")
+
+  requester       User                @relation("follow_requester_rel", fields: [requesterUserId], references: [id], onDelete: Cascade)
+  target          User                @relation("follow_target_rel", fields: [targetUserId], references: [id], onDelete: Cascade)
+  notifications   Notification[]
+
+  @@unique([requesterUserId, targetUserId], map: "follow_requests_requester_user_id_target_user_id_key")
+  @@index([requesterUserId], map: "follow_requests_requester_user_id_idx")
+  @@index([targetUserId], map: "follow_requests_target_user_id_idx")
+  @@index([status], map: "follow_requests_status_idx")
+  @@index([createdAt], map: "follow_requests_created_at_idx")
+  @@index([targetUserId, status, createdAt], map: "follow_requests_target_user_id_status_created_at_idx")
+  @@map("follow_requests")
+}
+
+model PostMedia {
+  id            Int           @id @default(autoincrement())
+  postId        Int           @map("post_id")
+  mediaType     PostMediaType @map("media_type")
+  storageKey    String        @map("storage_key")
+  mediaUrl      String        @map("media_url")
+  thumbnailUrl  String?       @map("thumbnail_url")
+  mimeType      String?       @map("mime_type")
+  width         Int?
+  height        Int?
+  durationMs    Int?          @map("duration_ms")
+  fileSizeBytes Int?          @map("file_size_bytes")
+  sortOrder     Int           @map("sort_order")
+  createdAt     DateTime      @default(now()) @map("created_at")
+  updatedAt     DateTime      @updatedAt @map("updated_at")
+
+  post          Post          @relation(fields: [postId], references: [id], onDelete: Cascade)
+
+  @@unique([postId, sortOrder], map: "post_media_post_id_sort_order_key")
+  @@index([postId], map: "post_media_post_id_idx")
+  @@index([postId, sortOrder], map: "post_media_post_id_sort_order_idx")
+  @@map("post_media")
+}
+
+model PostLike {
+  id        Int      @id @default(autoincrement())
+  postId    Int      @map("post_id")
+  userId    Int      @map("user_id")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  post      Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([postId, userId], map: "post_likes_post_id_user_id_key")
+  @@index([postId], map: "post_likes_post_id_idx")
+  @@index([userId], map: "post_likes_user_id_idx")
+  @@index([postId, createdAt], map: "post_likes_post_id_created_at_idx")
+  @@index([userId, createdAt], map: "post_likes_user_id_created_at_idx")
+  @@map("post_likes")
+}
+
+model SavedPost {
+  id        Int      @id @default(autoincrement())
+  userId    Int      @map("user_id")
+  postId    Int      @map("post_id")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  post      Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, postId], map: "saved_posts_user_id_post_id_key")
+  @@index([userId], map: "saved_posts_user_id_idx")
+  @@index([postId], map: "saved_posts_post_id_idx")
+  @@index([userId, createdAt], map: "saved_posts_user_id_created_at_idx")
+  @@map("saved_posts")
+}
+
+model Comment {
+  id              Int           @id @default(autoincrement())
+  postId          Int           @map("post_id")
+  userId          Int           @map("user_id")
+  parentCommentId Int?          @map("parent_comment_id")
+  body            String        @db.Text
+  repliesCount    Int           @default(0) @map("replies_count")
+  likesCount      Int           @default(0) @map("likes_count")
+  deletedAt       DateTime?     @map("deleted_at")
+  createdAt       DateTime      @default(now()) @map("created_at")
+  updatedAt       DateTime      @updatedAt @map("updated_at")
+
+  post            Post          @relation(fields: [postId], references: [id], onDelete: Cascade)
+  user            User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  parentComment   Comment?      @relation("comment_replies", fields: [parentCommentId], references: [id], onDelete: SetNull)
+  replies         Comment[]     @relation("comment_replies")
+  likes           CommentLike[]
+  mentions        Mention[]     @relation("mention_comment_rel")
+  notifications   Notification[] @relation("notification_comment_rel")
+  reportTargets   ReportTarget[] @relation("report_target_comment_rel")
+  moderationActions ModerationAction[] @relation("moderation_target_comment_rel")
+
+  @@index([postId], map: "comments_post_id_idx")
+  @@index([userId], map: "comments_user_id_idx")
+  @@index([parentCommentId], map: "comments_parent_comment_id_idx")
+  @@index([createdAt], map: "comments_created_at_idx")
+  @@index([postId, createdAt], map: "comments_post_id_created_at_idx")
+  @@index([parentCommentId, createdAt], map: "comments_parent_comment_id_created_at_idx")
+  @@map("comments")
+}
+
+model CommentLike {
+  id        Int      @id @default(autoincrement())
+  commentId Int      @map("comment_id")
+  userId    Int      @map("user_id")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  comment   Comment  @relation(fields: [commentId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([commentId, userId], map: "comment_likes_comment_id_user_id_key")
+  @@index([commentId], map: "comment_likes_comment_id_idx")
+  @@index([userId], map: "comment_likes_user_id_idx")
+  @@index([commentId, createdAt], map: "comment_likes_comment_id_created_at_idx")
+  @@map("comment_likes")
+}
+
+model Hashtag {
+  id            Int           @id @default(autoincrement())
+  tag           String        @unique
+  normalizedTag String        @unique @map("normalized_tag")
+  postsCount    Int           @default(0) @map("posts_count")
+  createdAt     DateTime      @default(now()) @map("created_at")
+  updatedAt     DateTime      @updatedAt @map("updated_at")
+
+  posts         PostHashtag[]
+
+  @@index([postsCount], map: "hashtags_posts_count_idx")
+  @@index([createdAt], map: "hashtags_created_at_idx")
+  @@map("hashtags")
+}
+
+model PostHashtag {
+  id        Int      @id @default(autoincrement())
+  postId    Int      @map("post_id")
+  hashtagId Int      @map("hashtag_id")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  post      Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
+  hashtag   Hashtag  @relation(fields: [hashtagId], references: [id], onDelete: Cascade)
+
+  @@unique([postId, hashtagId], map: "post_hashtags_post_id_hashtag_id_key")
+  @@index([postId], map: "post_hashtags_post_id_idx")
+  @@index([hashtagId], map: "post_hashtags_hashtag_id_idx")
+  @@index([hashtagId, createdAt], map: "post_hashtags_hashtag_id_created_at_idx")
+  @@map("post_hashtags")
+}
+
+model Mention {
+  id              Int               @id @default(autoincrement())
+  mentionedUserId Int               @map("mentioned_user_id")
+  actorUserId     Int               @map("actor_user_id")
+  targetType      MentionTargetType @map("target_type")
+  postId          Int?              @map("post_id")
+  commentId       Int?              @map("comment_id")
+  createdAt       DateTime          @default(now()) @map("created_at")
+
+  mentionedUser   User              @relation("mention_target_user_rel", fields: [mentionedUserId], references: [id], onDelete: Cascade)
+  actorUser       User              @relation("mention_actor_rel", fields: [actorUserId], references: [id], onDelete: Cascade)
+  post            Post?             @relation("mention_post_rel", fields: [postId], references: [id], onDelete: Cascade)
+  comment         Comment?          @relation("mention_comment_rel", fields: [commentId], references: [id], onDelete: Cascade)
+
+  @@index([mentionedUserId], map: "mentions_mentioned_user_id_idx")
+  @@index([actorUserId], map: "mentions_actor_user_id_idx")
+  @@index([postId], map: "mentions_post_id_idx")
+  @@index([commentId], map: "mentions_comment_id_idx")
+  @@index([mentionedUserId, createdAt], map: "mentions_mentioned_user_id_created_at_idx")
+  @@index([targetType, createdAt], map: "mentions_target_type_created_at_idx")
+  @@map("mentions")
+}
+
+model NotificationPreference {
+  id                           Int      @id @default(autoincrement())
+  userId                       Int      @unique @map("user_id")
+  pushEnabled                  Boolean  @default(true) @map("push_enabled")
+  emailEnabled                 Boolean  @default(true) @map("email_enabled")
+  followNotificationsEnabled   Boolean  @default(true) @map("follow_notifications_enabled")
+  likeNotificationsEnabled     Boolean  @default(true) @map("like_notifications_enabled")
+  commentNotificationsEnabled  Boolean  @default(true) @map("comment_notifications_enabled")
+  mentionNotificationsEnabled  Boolean  @default(true) @map("mention_notifications_enabled")
+  messageNotificationsEnabled  Boolean  @default(true) @map("message_notifications_enabled")
+  createdAt                    DateTime @default(now()) @map("created_at")
+  updatedAt                    DateTime @updatedAt @map("updated_at")
+
+  user                         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("notification_preferences")
+}
+
+model Notification {
+  id              Int              @id @default(autoincrement())
+  recipientUserId Int              @map("recipient_user_id")
+  actorUserId     Int?             @map("actor_user_id")
+  type            NotificationType
+  postId          Int?             @map("post_id")
+  commentId       Int?             @map("comment_id")
+  messageId       Int?             @map("message_id")
+  followRequestId Int?             @map("follow_request_id")
+  reportId        Int?             @map("report_id")
+  title           String?
+  body            String?          @db.Text
+  isRead          Boolean          @default(false) @map("is_read")
+  readAt          DateTime?        @map("read_at")
+  createdAt       DateTime         @default(now()) @map("created_at")
+  updatedAt       DateTime         @updatedAt @map("updated_at")
+
+  recipientUser   User             @relation("notification_recipient_rel", fields: [recipientUserId], references: [id], onDelete: Cascade)
+  actorUser       User?            @relation("notification_actor_rel", fields: [actorUserId], references: [id], onDelete: SetNull)
+  post            Post?            @relation("notification_post_rel", fields: [postId], references: [id], onDelete: SetNull)
+  comment         Comment?         @relation("notification_comment_rel", fields: [commentId], references: [id], onDelete: SetNull)
+  message         Message?         @relation("notification_message_rel", fields: [messageId], references: [id], onDelete: SetNull)
+  followRequest   FollowRequest?   @relation(fields: [followRequestId], references: [id], onDelete: SetNull)
+  report          Report?          @relation(fields: [reportId], references: [id], onDelete: SetNull)
+
+  @@index([recipientUserId], map: "notifications_recipient_user_id_idx")
+  @@index([actorUserId], map: "notifications_actor_user_id_idx")
+  @@index([type], map: "notifications_type_idx")
+  @@index([isRead], map: "notifications_is_read_idx")
+  @@index([recipientUserId, isRead, createdAt], map: "notifications_recipient_user_id_is_read_created_at_idx")
+  @@index([recipientUserId, createdAt], map: "notifications_recipient_user_id_created_at_idx")
+  @@map("notifications")
+}
+
+model Conversation {
+  id                Int                  @id @default(autoincrement())
+  conversationType  ConversationType     @map("conversation_type")
+  title             String?
+  createdByUserId   Int?                 @map("created_by_user_id")
+  lastMessageId     Int?                 @unique @map("last_message_id")
+  lastMessageAt     DateTime?            @map("last_message_at")
+  createdAt         DateTime             @default(now()) @map("created_at")
+  updatedAt         DateTime             @updatedAt @map("updated_at")
+
+  createdByUser     User?                @relation("conversation_creator_rel", fields: [createdByUserId], references: [id], onDelete: SetNull)
+  lastMessage       Message?             @relation("conversation_last_message_rel", fields: [lastMessageId], references: [id], onDelete: SetNull)
+  participants      ConversationParticipant[]
+  messages          Message[]            @relation("conversation_messages_rel")
+
+  @@index([conversationType], map: "conversations_conversation_type_idx")
+  @@index([createdByUserId], map: "conversations_created_by_user_id_idx")
+  @@index([lastMessageAt], map: "conversations_last_message_at_idx")
+  @@index([conversationType, lastMessageAt], map: "conversations_conversation_type_last_message_at_idx")
+  @@map("conversations")
+}
+
+model ConversationParticipant {
+  id                Int       @id @default(autoincrement())
+  conversationId    Int       @map("conversation_id")
+  userId            Int       @map("user_id")
+  joinedAt          DateTime  @default(now()) @map("joined_at")
+  leftAt            DateTime? @map("left_at")
+  lastReadMessageId Int?      @map("last_read_message_id")
+  lastReadAt        DateTime? @map("last_read_at")
+  isMuted           Boolean   @default(false) @map("is_muted")
+  createdAt         DateTime  @default(now()) @map("created_at")
+  updatedAt         DateTime  @updatedAt @map("updated_at")
+
+  conversation      Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  user              User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  lastReadMessage   Message?     @relation("participant_last_read_message_rel", fields: [lastReadMessageId], references: [id], onDelete: SetNull)
+
+  @@unique([conversationId, userId], map: "conversation_participants_conversation_id_user_id_key")
+  @@index([conversationId], map: "conversation_participants_conversation_id_idx")
+  @@index([userId], map: "conversation_participants_user_id_idx")
+  @@index([userId, updatedAt], map: "conversation_participants_user_id_updated_at_idx")
+  @@index([conversationId, leftAt], map: "conversation_participants_conversation_id_left_at_idx")
+  @@map("conversation_participants")
+}
+
+model Message {
+  id               Int          @id @default(autoincrement())
+  conversationId   Int          @map("conversation_id")
+  senderUserId     Int          @map("sender_user_id")
+  messageType      MessageType  @map("message_type")
+  body             String?      @db.Text
+  mediaUrl         String?      @map("media_url")
+  thumbnailUrl     String?      @map("thumbnail_url")
+  replyToMessageId Int?         @map("reply_to_message_id")
+  editedAt         DateTime?    @map("edited_at")
+  deletedAt        DateTime?    @map("deleted_at")
+  createdAt        DateTime     @default(now()) @map("created_at")
+  updatedAt        DateTime     @updatedAt @map("updated_at")
+
+  conversation     Conversation @relation("conversation_messages_rel", fields: [conversationId], references: [id], onDelete: Cascade)
+  senderUser       User         @relation("message_sender_rel", fields: [senderUserId], references: [id], onDelete: Cascade)
+  replyToMessage   Message?     @relation("message_replies_rel", fields: [replyToMessageId], references: [id], onDelete: SetNull)
+  replies          Message[]    @relation("message_replies_rel")
+  readReceipts     MessageRead[]
+  notifications    Notification[] @relation("notification_message_rel")
+  reportTargets    ReportTarget[] @relation("report_target_message_rel")
+  moderationActions ModerationAction[] @relation("moderation_target_message_rel")
+  conversationLastMessage Conversation? @relation("conversation_last_message_rel")
+  participantLastReadBy ConversationParticipant[] @relation("participant_last_read_message_rel")
+
+  @@index([conversationId], map: "messages_conversation_id_idx")
+  @@index([senderUserId], map: "messages_sender_user_id_idx")
+  @@index([replyToMessageId], map: "messages_reply_to_message_id_idx")
+  @@index([createdAt], map: "messages_created_at_idx")
+  @@index([conversationId, createdAt], map: "messages_conversation_id_created_at_idx")
+  @@index([conversationId, deletedAt, createdAt], map: "messages_conversation_id_deleted_at_created_at_idx")
+  @@map("messages")
+}
+
+model MessageRead {
+  id        Int      @id @default(autoincrement())
+  messageId Int      @map("message_id")
+  userId    Int      @map("user_id")
+  readAt    DateTime @map("read_at")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  message   Message  @relation(fields: [messageId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([messageId, userId], map: "message_reads_message_id_user_id_key")
+  @@index([messageId], map: "message_reads_message_id_idx")
+  @@index([userId], map: "message_reads_user_id_idx")
+  @@index([userId, readAt], map: "message_reads_user_id_read_at_idx")
+  @@map("message_reads")
+}
+
+model ReportReason {
+  id               Int      @id @default(autoincrement())
+  code             String   @unique
+  label            String
+  description      String?  @db.Text
+  appliesToUser    Boolean  @default(false) @map("applies_to_user")
+  appliesToPost    Boolean  @default(false) @map("applies_to_post")
+  appliesToComment Boolean  @default(false) @map("applies_to_comment")
+  appliesToMessage Boolean  @default(false) @map("applies_to_message")
+  createdAt        DateTime @default(now()) @map("created_at")
+  updatedAt        DateTime @updatedAt @map("updated_at")
+
+  reports          Report[]
+
+  @@map("report_reasons")
+}
+
+model Report {
+  id             Int          @id @default(autoincrement())
+  reporterUserId Int          @map("reporter_user_id")
+  reasonId       Int          @map("reason_id")
+  status         ReportStatus @default(OPEN)
+  description    String?      @db.Text
+  createdAt      DateTime     @default(now()) @map("created_at")
+  updatedAt      DateTime     @updatedAt @map("updated_at")
+  resolvedAt     DateTime?    @map("resolved_at")
+
+  reporterUser   User         @relation("reporter_rel", fields: [reporterUserId], references: [id], onDelete: Cascade)
+  reason         ReportReason @relation(fields: [reasonId], references: [id], onDelete: Restrict)
+  targets        ReportTarget[]
+  moderationActions ModerationAction[]
+  notifications  Notification[]
+
+  @@index([reporterUserId], map: "reports_reporter_user_id_idx")
+  @@index([reasonId], map: "reports_reason_id_idx")
+  @@index([status], map: "reports_status_idx")
+  @@index([createdAt], map: "reports_created_at_idx")
+  @@index([status, createdAt], map: "reports_status_created_at_idx")
+  @@map("reports")
+}
+
+model ReportTarget {
+  id              Int              @id @default(autoincrement())
+  reportId        Int              @map("report_id")
+  targetType      ReportTargetType @map("target_type")
+  targetUserId    Int?             @map("target_user_id")
+  targetPostId    Int?             @map("target_post_id")
+  targetCommentId Int?             @map("target_comment_id")
+  targetMessageId Int?             @map("target_message_id")
+  createdAt       DateTime         @default(now()) @map("created_at")
+
+  report          Report           @relation(fields: [reportId], references: [id], onDelete: Cascade)
+  targetUser      User?            @relation("report_target_user_rel", fields: [targetUserId], references: [id], onDelete: SetNull)
+  targetPost      Post?            @relation("report_target_post_rel", fields: [targetPostId], references: [id], onDelete: SetNull)
+  targetComment   Comment?         @relation("report_target_comment_rel", fields: [targetCommentId], references: [id], onDelete: SetNull)
+  targetMessage   Message?         @relation("report_target_message_rel", fields: [targetMessageId], references: [id], onDelete: SetNull)
+
+  @@index([reportId], map: "report_targets_report_id_idx")
+  @@index([targetType], map: "report_targets_target_type_idx")
+  @@index([targetUserId], map: "report_targets_target_user_id_idx")
+  @@index([targetPostId], map: "report_targets_target_post_id_idx")
+  @@index([targetCommentId], map: "report_targets_target_comment_id_idx")
+  @@index([targetMessageId], map: "report_targets_target_message_id_idx")
+  @@map("report_targets")
+}
+
+model ModerationAction {
+  id              Int                  @id @default(autoincrement())
+  reportId        Int?                 @map("report_id")
+  targetType      ReportTargetType     @map("target_type")
+  targetUserId    Int?                 @map("target_user_id")
+  targetPostId    Int?                 @map("target_post_id")
+  targetCommentId Int?                 @map("target_comment_id")
+  targetMessageId Int?                 @map("target_message_id")
+  actionType      ModerationActionType @map("action_type")
+  moderatorUserId Int?                 @map("moderator_user_id")
+  notes           String?              @db.Text
+  createdAt       DateTime             @default(now()) @map("created_at")
+
+  report          Report?              @relation(fields: [reportId], references: [id], onDelete: SetNull)
+  targetUser      User?                @relation("moderation_target_user_rel", fields: [targetUserId], references: [id], onDelete: SetNull)
+  targetPost      Post?                @relation("moderation_target_post_rel", fields: [targetPostId], references: [id], onDelete: SetNull)
+  targetComment   Comment?             @relation("moderation_target_comment_rel", fields: [targetCommentId], references: [id], onDelete: SetNull)
+  targetMessage   Message?             @relation("moderation_target_message_rel", fields: [targetMessageId], references: [id], onDelete: SetNull)
+  moderatorUser   User?                @relation("moderator_user_rel", fields: [moderatorUserId], references: [id], onDelete: SetNull)
+
+  @@index([reportId], map: "moderation_actions_report_id_idx")
+  @@index([actionType], map: "moderation_actions_action_type_idx")
+  @@index([moderatorUserId], map: "moderation_actions_moderator_user_id_idx")
+  @@index([createdAt], map: "moderation_actions_created_at_idx")
+  @@index([targetType], map: "moderation_actions_target_type_idx")
+  @@map("moderation_actions")
+}
+
 model UserBlock {
-  id                    Int        @id @default(autoincrement())
-  blockerId             Int        @map("blocker_id")
-  blockedId             Int        @map("blocked_id")
-  createdAt             DateTime   @default(now()) @map("created_at")
+  id            Int      @id @default(autoincrement())
+  blockerUserId Int      @map("blocker_user_id")
+  blockedUserId Int      @map("blocked_user_id")
+  createdAt     DateTime @default(now()) @map("created_at")
 
-  blocker               User       @relation("blocker_rel", fields: [blockerId], references: [id], onDelete: Cascade)
-  blocked               User       @relation("blocked_rel", fields: [blockedId], references: [id], onDelete: Cascade)
+  blocker       User     @relation("blocker_rel", fields: [blockerUserId], references: [id], onDelete: Cascade)
+  blocked       User     @relation("blocked_rel", fields: [blockedUserId], references: [id], onDelete: Cascade)
 
-  @@unique([blockerId, blockedId], map: "user_blocks_blocker_id_blocked_id_key")
-  @@index([blockerId], map: "user_blocks_blocker_id_idx")
-  @@index([blockedId], map: "user_blocks_blocked_id_idx")
+  @@unique([blockerUserId, blockedUserId], map: "user_blocks_blocker_user_id_blocked_user_id_key")
+  @@index([blockerUserId], map: "user_blocks_blocker_user_id_idx")
+  @@index([blockedUserId], map: "user_blocks_blocked_user_id_idx")
   @@map("user_blocks")
 }

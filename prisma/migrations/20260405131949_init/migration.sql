@@ -63,16 +63,27 @@ CREATE TABLE `posts` (
 CREATE TABLE `sessions` (
     `id` INTEGER NOT NULL AUTO_INCREMENT,
     `user_id` INTEGER NOT NULL,
+    `public_id` VARCHAR(191) NOT NULL,
     `device_id` VARCHAR(191) NULL,
     `device_name` VARCHAR(191) NULL,
+    `device_os` VARCHAR(191) NULL,
+    `platform` VARCHAR(191) NULL,
+    `app_version` VARCHAR(191) NULL,
     `ip_address` VARCHAR(191) NULL,
     `user_agent` VARCHAR(191) NULL,
+    `status` ENUM('ACTIVE', 'REVOKED', 'EXPIRED') NOT NULL DEFAULT 'ACTIVE',
     `last_used_at` DATETIME(3) NULL,
     `expires_at` DATETIME(3) NOT NULL,
+    `revoked_at` DATETIME(3) NULL,
+    `revoke_reason` VARCHAR(191) NULL,
     `created_at` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
     `updated_at` DATETIME(3) NOT NULL,
 
+    UNIQUE INDEX `sessions_public_id_key`(`public_id`),
     INDEX `sessions_user_id_idx`(`user_id`),
+    INDEX `sessions_public_id_idx`(`public_id`),
+    INDEX `sessions_device_id_idx`(`device_id`),
+    INDEX `sessions_status_idx`(`status`),
     INDEX `sessions_expires_at_idx`(`expires_at`),
     PRIMARY KEY (`id`)
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
@@ -81,14 +92,25 @@ CREATE TABLE `sessions` (
 CREATE TABLE `refresh_tokens` (
     `id` INTEGER NOT NULL AUTO_INCREMENT,
     `user_id` INTEGER NOT NULL,
-    `token` VARCHAR(191) NOT NULL,
+    `session_id` INTEGER NOT NULL,
+    `token_id` VARCHAR(191) NOT NULL,
+    `family_id` VARCHAR(191) NOT NULL,
+    `parent_token_id` VARCHAR(191) NULL,
+    `token_hash` VARCHAR(191) NOT NULL,
+    `revoked_reason` VARCHAR(191) NULL,
+    `consumed_at` DATETIME(3) NULL,
+    `replaced_at` DATETIME(3) NULL,
     `revoked_at` DATETIME(3) NULL,
     `expires_at` DATETIME(3) NOT NULL,
     `created_at` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
     `updated_at` DATETIME(3) NOT NULL,
 
-    UNIQUE INDEX `refresh_tokens_token_key`(`token`),
+    UNIQUE INDEX `refresh_tokens_token_id_key`(`token_id`),
+    UNIQUE INDEX `refresh_tokens_token_hash_key`(`token_hash`),
     INDEX `refresh_tokens_user_id_idx`(`user_id`),
+    INDEX `refresh_tokens_session_id_idx`(`session_id`),
+    INDEX `refresh_tokens_family_id_idx`(`family_id`),
+    INDEX `refresh_tokens_token_id_idx`(`token_id`),
     INDEX `refresh_tokens_expires_at_idx`(`expires_at`),
     PRIMARY KEY (`id`)
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
@@ -97,14 +119,13 @@ CREATE TABLE `refresh_tokens` (
 CREATE TABLE `verification_tokens` (
     `id` INTEGER NOT NULL AUTO_INCREMENT,
     `user_id` INTEGER NOT NULL,
-    `token` VARCHAR(191) NOT NULL,
-    `type` VARCHAR(191) NOT NULL,
+    `type` ENUM('EMAIL_VERIFICATION', 'PASSWORD_RESET') NOT NULL,
+    `token_hash` VARCHAR(191) NOT NULL,
     `expires_at` DATETIME(3) NOT NULL,
     `used_at` DATETIME(3) NULL,
     `created_at` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
-    `updated_at` DATETIME(3) NOT NULL,
 
-    UNIQUE INDEX `verification_tokens_token_key`(`token`),
+    UNIQUE INDEX `verification_tokens_token_hash_key`(`token_hash`),
     INDEX `verification_tokens_user_id_idx`(`user_id`),
     INDEX `verification_tokens_type_idx`(`type`),
     INDEX `verification_tokens_expires_at_idx`(`expires_at`),
@@ -148,6 +169,9 @@ ALTER TABLE `sessions` ADD CONSTRAINT `sessions_user_id_fkey` FOREIGN KEY (`user
 
 -- AddForeignKey
 ALTER TABLE `refresh_tokens` ADD CONSTRAINT `refresh_tokens_user_id_fkey` FOREIGN KEY (`user_id`) REFERENCES `users`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE `refresh_tokens` ADD CONSTRAINT `refresh_tokens_session_id_fkey` FOREIGN KEY (`session_id`) REFERENCES `sessions`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE `verification_tokens` ADD CONSTRAINT `verification_tokens_user_id_fkey` FOREIGN KEY (`user_id`) REFERENCES `users`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;

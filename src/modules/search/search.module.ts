@@ -1,5 +1,5 @@
 import { Module } from '@nestjs/common';
-import { SearchController } from './search.controller';
+import { SearchController } from './v1/search.controller';
 import { SearchService } from './search.service';
 
 @Module({

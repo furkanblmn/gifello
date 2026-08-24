@@ -1,5 +1,5 @@
 import { Module } from '@nestjs/common';
-import { FollowsController } from './follows.controller';
+import { FollowsController } from './v1/follows.controller';
 import { FollowsService } from './follows.service';
 
 @Module({

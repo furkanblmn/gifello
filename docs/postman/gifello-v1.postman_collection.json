@@ -1,0 +1,542 @@
+{
+  "info": {
+    "_postman_id": "bd58165e-5c17-4fcb-b7c2-bb53a4acb0ca",
+    "name": "Gifello API v1",
+    "description": "Gifello backend Postman collection. All current v1 endpoints are grouped by module and ready to import. Use the `Gifello Local` environment and start with `Auth > Register` or `Auth > Login`; collection tests will automatically persist tokens and common IDs into environment variables.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{accessToken}}",
+        "type": "string"
+      }
+    ]
+  },
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "pm.request.headers.upsert({ key: 'Accept', value: 'application/json' });",
+          "const method = pm.request.method.toUpperCase();",
+          "if (['POST', 'PUT', 'PATCH', 'DELETE'].includes(method)) {",
+          "  pm.request.headers.upsert({ key: 'Content-Type', value: 'application/json' });",
+          "}"
+        ]
+      }
+    }
+  ],
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:3000"
+    }
+  ],
+  "item": [
+    {
+      "name": "Auth",
+      "description": "Authentication and session management endpoints. `Register`, `Login`, `Refresh`, `Verify Email Request`, and `Password Reset Request` requests update Postman environment variables automatically when tokens are returned.",
+      "item": [
+        {
+          "name": "Health",
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "GET",
+            "url": "{{baseUrl}}/v1/auth/health",
+            "description": "Basic auth module health check."
+          }
+        },
+        {
+          "name": "Register",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const data = pm.response.json();",
+                  "if (data.accessToken) pm.environment.set('accessToken', data.accessToken);",
+                  "if (data.refreshToken) pm.environment.set('refreshToken', data.refreshToken);",
+                  "if (data.verificationToken) pm.environment.set('verificationToken', data.verificationToken);",
+                  "if (data.user?.id) pm.environment.set('userId', String(data.user.id));",
+                  "if (data.user?.username) pm.environment.set('profileUsername', data.user.username);",
+                  "if (data.session?.id) pm.environment.set('sessionId', String(data.session.id));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "POST",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"postman.user@example.com\",\n  \"username\": \"postman_user\",\n  \"password\": \"Password123!\",\n  \"displayName\": \"Postman User\",\n  \"deviceId\": \"postman-device-1\",\n  \"deviceName\": \"Postman Mac\",\n  \"platform\": \"web\"\n}"
+            },
+            "url": "{{baseUrl}}/v1/auth/register",
+            "description": "Creates a new user and returns access/refresh tokens."
+          }
+        },
+        {
+          "name": "Login",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const data = pm.response.json();",
+                  "if (data.accessToken) pm.environment.set('accessToken', data.accessToken);",
+                  "if (data.refreshToken) pm.environment.set('refreshToken', data.refreshToken);",
+                  "if (data.user?.id) pm.environment.set('userId', String(data.user.id));",
+                  "if (data.user?.username) pm.environment.set('profileUsername', data.user.username);",
+                  "if (data.session?.id) pm.environment.set('sessionId', String(data.session.id));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "POST",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"alice@example.com\",\n  \"password\": \"Password123!\",\n  \"deviceId\": \"postman-device-1\",\n  \"deviceName\": \"Postman Mac\",\n  \"platform\": \"web\"\n}"
+            },
+            "url": "{{baseUrl}}/v1/auth/login",
+            "description": "Logs in an existing user and stores tokens into the active Postman environment."
+          }
+        },
+        {
+          "name": "Refresh",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const data = pm.response.json();",
+                  "if (data.accessToken) pm.environment.set('accessToken', data.accessToken);",
+                  "if (data.refreshToken) pm.environment.set('refreshToken', data.refreshToken);",
+                  "if (data.session?.id) pm.environment.set('sessionId', String(data.session.id));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "POST",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"refreshToken\": \"{{refreshToken}}\"\n}"
+            },
+            "url": "{{baseUrl}}/v1/auth/refresh",
+            "description": "Rotates the refresh token and stores the latest access/refresh tokens."
+          }
+        },
+        {
+          "name": "Me",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/v1/auth/me",
+            "description": "Returns the currently authenticated user."
+          }
+        },
+        {
+          "name": "List Sessions",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/v1/auth/sessions",
+            "description": "Lists sessions for the current user."
+          }
+        },
+        {
+          "name": "Revoke Session",
+          "request": {
+            "method": "DELETE",
+            "url": "{{baseUrl}}/v1/auth/sessions/{{sessionId}}",
+            "description": "Revokes a specific session by numeric session ID."
+          }
+        },
+        {
+          "name": "Logout",
+          "request": {
+            "method": "POST",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"refreshToken\": \"{{refreshToken}}\"\n}"
+            },
+            "url": "{{baseUrl}}/v1/auth/logout",
+            "description": "Logs out the current session. Passing the refresh token also revokes that token explicitly."
+          }
+        },
+        {
+          "name": "Logout All",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/v1/auth/logout-all",
+            "description": "Revokes all active sessions for the current user."
+          }
+        },
+        {
+          "name": "Verify Email Request",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const data = pm.response.json();",
+                  "if (data.verificationToken) pm.environment.set('verificationToken', data.verificationToken);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/v1/auth/verify-email/request",
+            "description": "Creates a new email verification token for the current user. In non-production responses the token is exposed and saved to the environment."
+          }
+        },
+        {
+          "name": "Verify Email Confirm",
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "POST",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"token\": \"{{verificationToken}}\"\n}"
+            },
+            "url": "{{baseUrl}}/v1/auth/verify-email/confirm",
+            "description": "Confirms email verification using the token captured from register or verify-email/request."
+          }
+        },
+        {
+          "name": "Password Reset Request",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const data = pm.response.json();",
+                  "if (data.resetToken) pm.environment.set('resetToken', data.resetToken);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "POST",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"alice@example.com\"\n}"
+            },
+            "url": "{{baseUrl}}/v1/auth/password-reset/request",
+            "description": "Requests a password reset token for an email. In non-production responses the token is saved to the environment."
+          }
+        },
+        {
+          "name": "Password Reset Confirm",
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "POST",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"token\": \"{{resetToken}}\",\n  \"newPassword\": \"Password123!\"\n}"
+            },
+            "url": "{{baseUrl}}/v1/auth/password-reset/confirm",
+            "description": "Resets the password using the token saved from password-reset/request."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Users",
+      "item": [
+        {
+          "name": "List Users",
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "GET",
+            "url": "{{baseUrl}}/v1/users",
+            "description": "Lists users with the public-safe projection exposed by the current service."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Profiles",
+      "item": [
+        {
+          "name": "Get Profile By Username",
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "GET",
+            "url": "{{baseUrl}}/v1/profiles/{{profileUsername}}",
+            "description": "Fetches a profile by username."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Posts",
+      "item": [
+        {
+          "name": "List Posts",
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "POST",
+            "body": {
+              "mode": "raw",
+              "raw": "{}"
+            },
+            "url": "{{baseUrl}}/v1/posts",
+            "description": "Returns the current list of posts. Optional filters are sent in the payload."
+          }
+        },
+        {
+          "name": "List Gossip Cauldron Posts",
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "POST",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"type\": \"GOSSIP_CAULDRON\"\n}"
+            },
+            "url": "{{baseUrl}}/v1/posts",
+            "description": "Returns text-only gossip cauldron posts using filter payload."
+          }
+        },
+        {
+          "name": "Create Standard Post",
+          "request": {
+            "method": "POST",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"type\": \"STANDARD\",\n  \"caption\": \"Sunset and city lights.\",\n  \"visibility\": \"PUBLIC\",\n  \"commentsDisabled\": false,\n  \"hasScent\": false,\n  \"mediaItems\": [\n    {\n      \"mediaType\": \"IMAGE\",\n      \"storageKey\": \"posts/postman-standard-1.jpg\",\n      \"mediaUrl\": \"https://cdn.example.com/posts/postman-standard-1.jpg\",\n      \"thumbnailUrl\": \"https://cdn.example.com/posts/postman-standard-1-thumb.jpg\",\n      \"mimeType\": \"image/jpeg\",\n      \"width\": 1080,\n      \"height\": 1350,\n      \"fileSizeBytes\": 248000\n    }\n  ]\n}"
+            },
+            "url": "{{baseUrl}}/v1/posts/create",
+            "description": "Creates a regular post. Requires bearer auth."
+          }
+        },
+        {
+          "name": "Create Gossip Cauldron Post",
+          "request": {
+            "method": "POST",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"type\": \"GOSSIP_CAULDRON\",\n  \"caption\": \"Dedikodu kazaninda bugunun konusu: toplantidan once kahveleri kim bitirdi?\",\n  \"visibility\": \"PUBLIC\",\n  \"commentsDisabled\": false,\n  \"hasScent\": true\n}"
+            },
+            "url": "{{baseUrl}}/v1/posts/create",
+            "description": "Creates a text-only gossip cauldron post. Do not send mediaItems. When hasScent is true, nearby users receive a notification based on app settings."
+          }
+        },
+        {
+          "name": "Get Post By ID",
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "GET",
+            "url": "{{baseUrl}}/v1/posts/{{postId}}",
+            "description": "Fetches a single post by numeric ID."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Comments",
+      "item": [
+        {
+          "name": "List Comments By Post",
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "GET",
+            "url": "{{baseUrl}}/v1/comments/post/{{postId}}",
+            "description": "Lists comments for a post."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Likes",
+      "item": [
+        {
+          "name": "List Post Likes",
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "GET",
+            "url": "{{baseUrl}}/v1/likes/posts/{{postId}}",
+            "description": "Lists users/records that liked a post."
+          }
+        },
+        {
+          "name": "List Comment Likes",
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "GET",
+            "url": "{{baseUrl}}/v1/likes/comments/{{commentId}}",
+            "description": "Lists users/records that liked a comment."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Media",
+      "item": [
+        {
+          "name": "List Media For Post",
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "GET",
+            "url": "{{baseUrl}}/v1/media/posts/{{postId}}",
+            "description": "Lists media entries attached to a post."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Follows",
+      "item": [
+        {
+          "name": "List Followers",
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "GET",
+            "url": "{{baseUrl}}/v1/follows/{{userId}}/followers",
+            "description": "Lists followers for a user."
+          }
+        },
+        {
+          "name": "List Following",
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "GET",
+            "url": "{{baseUrl}}/v1/follows/{{userId}}/following",
+            "description": "Lists accounts the user is following."
+          }
+        },
+        {
+          "name": "List Received Follow Requests",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/v1/follows/requests/received",
+            "description": "Lists follow requests received by the authenticated user."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Feed",
+      "item": [
+        {
+          "name": "Get Home Feed",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/v1/feed",
+            "description": "Returns the authenticated user's home feed."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Search",
+      "item": [
+        {
+          "name": "Search",
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "POST",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"text\": \"{{searchQuery}}\"\n}"
+            },
+            "url": "{{baseUrl}}/v1/search",
+            "description": "Search endpoint for users/content using a request payload."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Notifications",
+      "item": [
+        {
+          "name": "List Notifications",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/v1/notifications",
+            "description": "Lists notifications for the authenticated user."
+          }
+        },
+        {
+          "name": "Mark Notification As Read",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/v1/notifications/{{notificationId}}/read",
+            "description": "Marks one notification as read."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Chat",
+      "item": [
+        {
+          "name": "List Conversations",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/v1/chat/conversations",
+            "description": "Lists conversations for the authenticated user."
+          }
+        },
+        {
+          "name": "List Messages By Conversation",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/v1/chat/conversations/{{conversationId}}/messages",
+            "description": "Lists messages for a conversation the authenticated user participates in."
+          }
+        }
+      ]
+    }
+  ]
+}

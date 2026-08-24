@@ -1,0 +1,3 @@
+display_name: Gifello NestJS Backend
+short_description: Implement or update Gifello backend endpoints, services, DTOs, Prisma flows, Swagger docs, and Postman assets using the current NestJS conventions.
+default_prompt: Follow the Gifello NestJS backend conventions for versioned controllers, service-based Prisma access, DTO validation, Swagger updates, Postman alignment, and validation with lint and build.

@@ -1,5 +1,5 @@
 import { Module } from '@nestjs/common';
-import { FeedController } from './feed.controller';
+import { FeedController } from './v1/feed.controller';
 import { FeedService } from './feed.service';
 
 @Module({

@@ -44,6 +44,17 @@ $ npm run start:dev
 $ npm run start:prod
 ```
 
+## API documentation
+
+Swagger UI is available at `/docs` by default after the app starts.
+
+```bash
+# default local URL
+http://localhost:3000/docs
+```
+
+You can change the path with `SWAGGER_PATH`.
+
 ## Run tests
 
 ```bash
