@@ -111,7 +111,7 @@ export class SiteController {
 <body>
   <main>
     <h1>Gifello</h1>
-    <p>Gifello API yayında. Mobil ve frontend entegrasyonları için dokümantasyon alanını kullanabilirsiniz.</p>
+    <p>Gifello API yayında. Entegrasyonlar için dokümantasyon alanını kullanabilirsiniz.</p>
     <a href="/docs">API Dokümantasyonu</a>
   </main>
 </body>
