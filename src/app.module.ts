@@ -15,6 +15,7 @@ import { MediaModule } from './modules/media/media.module';
 import { NotificationsModule } from './modules/notifications/notifications.module';
 import { ChatModule } from './modules/chat/chat.module';
 import { SearchModule } from './modules/search/search.module';
+import { SiteModule } from './modules/site/site.module';
 
 @Module({
   imports: [
@@ -42,6 +43,7 @@ import { SearchModule } from './modules/search/search.module';
     NotificationsModule,
     ChatModule,
     SearchModule,
+    SiteModule,
   ],
   providers: [
     {
