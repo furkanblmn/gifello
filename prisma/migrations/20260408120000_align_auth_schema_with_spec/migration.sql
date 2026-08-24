@@ -52,6 +52,9 @@ ALTER TABLE `refresh_tokens`
     ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- Expand verification token support and indexing
+ALTER TABLE `verification_tokens`
+    DROP FOREIGN KEY `verification_tokens_user_id_fkey`;
+
 DROP INDEX `verification_tokens_user_id_idx` ON `verification_tokens`;
 DROP INDEX `verification_tokens_type_idx` ON `verification_tokens`;
 
@@ -75,6 +78,10 @@ ALTER TABLE `verification_tokens`
 
 CREATE INDEX `verification_tokens_user_id_type_idx`
     ON `verification_tokens`(`user_id`, `type`);
+
+ALTER TABLE `verification_tokens`
+    ADD CONSTRAINT `verification_tokens_user_id_fkey`
+    FOREIGN KEY (`user_id`) REFERENCES `users`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- Add provider account linking table for external auth
 CREATE TABLE `user_auth_accounts` (
