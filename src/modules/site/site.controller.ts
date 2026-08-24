@@ -22,6 +22,12 @@ export class SiteController {
     return this.isDocsHost(host) ? this.docsHtml() : this.welcomeHtml();
   }
 
+  @Get('docs')
+  @Header('Content-Type', 'text/html; charset=utf-8')
+  docs(): string {
+    return this.docsHtml();
+  }
+
   @Get('postman/gifello-v1.postman_collection.json')
   downloadPostmanCollection(@Res({ passthrough: true }) res: Response) {
     const filePath = join(
@@ -106,7 +112,7 @@ export class SiteController {
   <main>
     <h1>Gifello</h1>
     <p>Gifello API yayında. Mobil ve frontend entegrasyonları için dokümantasyon alanını kullanabilirsiniz.</p>
-    <a href="https://doc.gifello.app">API Dokümantasyonu</a>
+    <a href="/docs">API Dokümantasyonu</a>
   </main>
 </body>
 </html>`;
