@@ -2,7 +2,6 @@ import {
   Controller,
   Get,
   Header,
-  Headers,
   NotFoundException,
   Res,
   StreamableFile,
@@ -18,8 +17,8 @@ import type { Response } from 'express';
 export class SiteController {
   @Get()
   @Header('Content-Type', 'text/html; charset=utf-8')
-  home(@Headers('host') host = ''): string {
-    return this.isDocsHost(host) ? this.docsHtml() : this.welcomeHtml();
+  home(): string {
+    return this.welcomeHtml();
   }
 
   @Get('docs')
@@ -48,10 +47,6 @@ export class SiteController {
     });
 
     return new StreamableFile(createReadStream(filePath));
-  }
-
-  private isDocsHost(host: string): boolean {
-    return host.toLowerCase().split(':')[0] === 'doc.gifello.app';
   }
 
   private welcomeHtml(): string {

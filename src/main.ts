@@ -4,6 +4,7 @@ import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { appConfig } from './config/app.config';
 import { PrismaService } from './database/prisma/prisma.service';
+import { setupDocsAuth } from './docs/docs-auth.middleware';
 import { setupSwagger } from './docs/swagger/setup-swagger';
 
 async function bootstrap() {
@@ -24,6 +25,7 @@ async function bootstrap() {
       forbidNonWhitelisted: true,
     }),
   );
+  setupDocsAuth(app);
   setupSwagger(app);
   await app.listen(appConfig.port);
 }
