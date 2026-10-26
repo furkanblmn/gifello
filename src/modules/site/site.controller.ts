@@ -2,19 +2,19 @@ import {
   Controller,
   Get,
   Header,
-  NotFoundException,
   Res,
   StreamableFile,
   VERSION_NEUTRAL,
 } from '@nestjs/common';
-import { createReadStream, existsSync } from 'node:fs';
-import { join } from 'node:path';
 import type { Response } from 'express';
+import { SiteService } from './site.service';
 
 @Controller({
   version: VERSION_NEUTRAL,
 })
 export class SiteController {
+  constructor(private readonly siteService: SiteService) {}
+
   @Get()
   @Header('Content-Type', 'text/html; charset=utf-8')
   home(): string {
@@ -29,16 +29,7 @@ export class SiteController {
 
   @Get('postman/gifello-v1.postman_collection.json')
   downloadPostmanCollection(@Res({ passthrough: true }) res: Response) {
-    const filePath = join(
-      process.cwd(),
-      'docs',
-      'postman',
-      'gifello-v1.postman_collection.json',
-    );
-
-    if (!existsSync(filePath)) {
-      throw new NotFoundException('Postman collection was not found.');
-    }
+    const collection = this.siteService.getPostmanCollection();
 
     res.set({
       'Content-Type': 'application/json; charset=utf-8',
@@ -46,7 +37,7 @@ export class SiteController {
         'attachment; filename="gifello-v1.postman_collection.json"',
     });
 
-    return new StreamableFile(createReadStream(filePath));
+    return new StreamableFile(collection);
   }
 
   private welcomeHtml(): string {

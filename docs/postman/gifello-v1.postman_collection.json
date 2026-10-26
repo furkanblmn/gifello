@@ -2,7 +2,7 @@
   "info": {
     "_postman_id": "bd58165e-5c17-4fcb-b7c2-bb53a4acb0ca",
     "name": "Gifello API v1",
-    "description": "Gifello backend Postman collection. All current v1 endpoints are grouped by module and ready to import. Use the `Gifello Local` environment and start with `Auth > Register` or `Auth > Login`; collection tests will automatically persist tokens and common IDs into environment variables.",
+    "description": "Gifello backend Postman collection. All current v1 endpoints are grouped by module and ready to import. Downloads from the server use https://gifello.app when NODE_ENV=production; otherwise the collection defaults to http://localhost:3000. Postman environment variables override collection variables, so use an environment with the matching baseUrl (Gifello Local is for local development). Start with `Auth > Register` or `Auth > Login`; collection tests will automatically persist tokens and common IDs into environment variables.",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "auth": {
